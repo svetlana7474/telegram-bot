@@ -115,6 +115,7 @@ function sendDocument($chat_id, $file_path, $filename) {
         'document' => new CURLFile($file_path, '', $filename)
     ];
 
+    // Отправка документа
     $ch = curl_init(); 
     curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type:multipart/form-data"]);
     curl_setopt($ch, CURLOPT_URL, $url); 
@@ -122,5 +123,12 @@ function sendDocument($chat_id, $file_path, $filename) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields); 
     curl_exec($ch);
     curl_close($ch);
+
+    // Ссылка для скачивания 
+    $base_url = 'https://telegram-bot-iwfs.onrender.com/files'; 
+    $download_url = $base_url . '/' . urlencode($filename);
+
+    sendMessage($chat_id, " Вы также можете скачать файл по ссылке:\n$download_url");
 }
+
 ?>
