@@ -5,26 +5,10 @@ define('TOKEN', '7464255272:AAET0M7A6ZEDb2p7-_qas8pJLo8awtnvqw0');
 $offset = 0;
 $states = [];
 
-$saveDir = __DIR__ . "/files";
+$saveDir = __DIR__ . "/public/files";
 if (!file_exists($saveDir)) {
     mkdir($saveDir, 0777, true);
 }
-
-if (preg_match('/^\/files\/(.+)$/', $_SERVER['REQUEST_URI'], $matches)) {
-    $file = __DIR__ . '/files/' . basename($matches[1]);
-    if (file_exists($file)) {
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
-        header('Content-Length: ' . filesize($file));
-        readfile($file);
-        exit;
-    } else {
-        http_response_code(404);
-        echo "Файл не найден.";
-        exit;
-    }
-}
-
 
 while (true) {
     $response = file_get_contents("https://api.telegram.org/bot" . TOKEN . "/getUpdates?offset=" . $offset);
@@ -62,10 +46,10 @@ while (true) {
                     $original_name = $message['document']['file_name'];
                     $file_path = getFilePath($file_id);
                     $file_url = "https://api.telegram.org/file/bot" . TOKEN . "/" . $file_path;
-            
+
                     $prefix = ($states[$chat_id] == "encode") ? "encoded" : "decoded";
                     $ext = pathinfo($original_name, PATHINFO_EXTENSION);
-            
+
                     // Генерация уникального имени
                     $i = 1;
                     do {
@@ -73,21 +57,26 @@ while (true) {
                         $file_path_on_disk = "$saveDir/$new_file_name";
                         $i++;
                     } while (file_exists($file_path_on_disk));
-            
-                    // Сохраняем и отправляем
+
+                    // Сохраняем файл
                     $data = file_get_contents($file_url);
                     file_put_contents($file_path_on_disk, $data);
+
+                    // Отправляем файл обратно в Telegram
                     sendDocument($chat_id, $file_path_on_disk, $new_file_name);
-            
+
+                    // Ссылка для скачивания
+                    $public_link = "https://telegram-bot-iwfs.onrender.com/files/" . $new_file_name;
+                    sendMessage($chat_id, "Ссылка для скачивания файла: $public_link");
+
                     unset($states[$chat_id]); // сбрасываем состояние
                 }
             }
-            
 
             $offset = $update_id + 1;
         }
     }
-    sleep(2); 
+    sleep(2);
 }
 
 function sendMessage($chat_id, $message) {
@@ -131,20 +120,12 @@ function sendDocument($chat_id, $file_path, $filename) {
         'document' => new CURLFile($file_path, '', $filename)
     ];
 
-    // Отправка документа
-    $ch = curl_init(); 
+    $ch = curl_init();
     curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type:multipart/form-data"]);
-    curl_setopt($ch, CURLOPT_URL, $url); 
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields); 
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
     curl_exec($ch);
     curl_close($ch);
-
-    // Ссылка для скачивания 
-    $base_url = 'https://telegram-bot-iwfs.onrender.com/files'; 
-    $download_url = $base_url . '/' . urlencode($filename);
-
-    sendMessage($chat_id, " Вы также можете скачать файл по ссылке:\n$download_url");
 }
-
 ?>
