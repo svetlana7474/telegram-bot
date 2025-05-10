@@ -10,6 +10,22 @@ if (!file_exists($saveDir)) {
     mkdir($saveDir, 0777, true);
 }
 
+if (preg_match('/^\/files\/(.+)$/', $_SERVER['REQUEST_URI'], $matches)) {
+    $file = __DIR__ . '/files/' . basename($matches[1]);
+    if (file_exists($file)) {
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    } else {
+        http_response_code(404);
+        echo "Файл не найден.";
+        exit;
+    }
+}
+
+
 while (true) {
     $response = file_get_contents("https://api.telegram.org/bot" . TOKEN . "/getUpdates?offset=" . $offset);
     $response = json_decode($response, true);
