@@ -1,7 +1,7 @@
 <?php  
 echo "Бот запускается...\n";
 
-define('TOKEN', '7464255272:AAET0M7A6ZEDb2p7-_qas8pJLo8awtnvqw0');
+define('TOKEN', '7464as8pJLo8awtnvqw0');
 $offset = 0;
 $states = [];
 
